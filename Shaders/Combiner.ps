@@ -1,0 +1,48 @@
+sampler2D Scene : register(s0);
+sampler2D Blur : register(s1);
+sampler2D CurrentBlur : register(s2);
+#define Samples 20
+#define ScreenWidth 640.0f //TODO: Seriously Indy, Pass these in!
+#define ScreenHeight 480.0f
+
+struct PS_OUTPUT
+{
+   float4 diffuse   : COLOR0;
+};
+
+PS_OUTPUT ps_main( float4 inDiffuse: COLOR0, float2 TexCoord : TEXCOORD0)
+{
+   PS_OUTPUT output;  
+   float4 dir = tex2D( Blur, TexCoord );
+   float4 dir2 = tex2D( CurrentBlur, TexCoord );
+   float4 Base = tex2D( Scene, TexCoord );
+   float A = Base.a;
+   float dA = 0;
+   output.diffuse = 0.0;
+
+	float dirmag = (dir.x-dir.z)*(dir.x-dir.z) + (dir.y - dir.w)*(dir.y - dir.w);
+	float dir2mag = (dir2.x-dir2.z)*(dir2.x-dir2.z) + (dir2.y - dir2.w)*(dir2.y - dir2.w);
+	
+	float2 velocity;
+	
+	if(dirmag >= dir2mag)
+		velocity = (dir.xy-dir.zw) * 0.01;
+	else
+		velocity = (dir2.xy-dir2.zw) * 0.01;
+		 
+   for(int i=0; i<Samples/2; i++)
+   {
+		float4 Sample = tex2D( Scene, TexCoord-(velocity*i/Samples) );
+		dA = abs(A - Sample.a);
+		A = Sample.a;
+		output.diffuse += Sample;
+		
+		Sample = tex2D( Scene, TexCoord+(velocity*i/Samples) );
+		output.diffuse += Sample;
+   }   
+ 
+   output.diffuse /= Samples;
+   //output.diffuse = float4((dir.xy-dir.zw),0.0,0.0);//tex2D( Blur, TexCoord );
+   //output.diffuse = tex2D( Blur, TexCoord );
+   return output;
+}

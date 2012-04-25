@@ -1,0 +1,18 @@
+struct PS_OUTPUT
+{
+   float4 diffuse   : COLOR0;
+   float4 blur      : COLOR1;
+};
+
+PS_OUTPUT ps_main( float4 inDiffuse: COLOR0, float2 TexCoord : TEXCOORD0)
+{
+   PS_OUTPUT output;
+   float dist;
+   TexCoord[0] = abs(TexCoord[0] - 0.5f);
+   TexCoord[1] = abs(TexCoord[1] - 0.5f);
+   dist = pow(pow(TexCoord[0],2) + pow(TexCoord[1],2),0.5f);
+   output.diffuse[0] = output.diffuse[1] = output.diffuse[2] = output.diffuse[3] = pow(1-dist, 5.0f);
+   output.diffuse *= inDiffuse;
+   output.blur = 0;
+   return output;
+}

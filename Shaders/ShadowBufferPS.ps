@@ -1,0 +1,14 @@
+struct PS_OUTPUT
+{
+   float4 Depth   : COLOR0;
+};
+
+PS_OUTPUT ps_main( float Depth : TEXCOORD0 )
+{
+   PS_OUTPUT output;
+   
+   Depth /= 2000;
+   output.Depth = float4(Depth, Depth, Depth, 1.0);
+   
+   return output;
+}

@@ -1,0 +1,52 @@
+#define ScreenWidth 1024.0
+#define ScreenHeight 768.0
+sampler2D ShadowMap : register(s0);
+
+struct PS_OUTPUT
+{
+   float4 diffuse   : COLOR0;
+   float4 blur      : COLOR1;
+};
+
+struct VS_OUTPUT 
+{
+   float4 Diffuse  : COLOR0;
+   float2 TexCoord : TEXCOORD0;
+   float3 Light      : TEXCOORD1;
+   float3 Normal :   TEXCOORD2;
+   float4 NewPosition :   TEXCOORD3;
+   float4 Location : TEXCOORD4;
+   float4 ShadowMapCoord : TEXCOORD5;
+};
+
+PS_OUTPUT ps_main( VS_OUTPUT IN )
+{
+   PS_OUTPUT output;
+   float dist;
+   IN.TexCoord[0] = abs(IN.TexCoord[0] - 0.5f);
+   IN.TexCoord[1] = abs(IN.TexCoord[1] - 0.5f);
+   //output.diffuse = in.Diffuse;
+   output.diffuse = 1;
+   output.diffuse[0] = output.diffuse[1] = 0.5;
+   output.diffuse[2] = 0.8;
+   output.diffuse *= max( 0, dot(IN.Normal, IN.Light) );
+   output.diffuse += 0.3;
+   output.diffuse.a = (IN.Location.z)/1000.0f;
+   
+   float shadowDist = tex2Dproj( ShadowMap, IN.ShadowMapCoord);
+   
+   output.diffuse *= ((IN.ShadowMapCoord.z)/2000 > shadowDist+0.001f) ? 0.3f : 1.0f;
+   //output.diffuse = shadowDist;
+   
+   //in.Velocity /= in.Location.w;
+   //in.Location /= in.Location.w;
+   IN.NewPosition.x /= ScreenWidth;
+   IN.NewPosition.y /= ScreenHeight;
+   IN.Location.x /= ScreenWidth;
+   IN.Location.y /= ScreenHeight;
+   //Velocity += 0.5;
+   IN.NewPosition -= IN.Location;
+   float2 NewVelocity = float2(IN.NewPosition.x, -IN.NewPosition.y);
+   output.blur = float4(clamp(NewVelocity.xy, 0, 1), clamp(-NewVelocity.xy, 0, 1) );
+   return output;
+}
